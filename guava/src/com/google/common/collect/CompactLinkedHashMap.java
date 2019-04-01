@@ -53,20 +53,18 @@ import org.checkerframework.checker.nullness.qual.MonotonicNonNull;
 class CompactLinkedHashMap<K, V> extends CompactHashMap<K, V> {
   // TODO(lowasser): implement removeEldestEntry so this can be used as a drop-in replacement
 
-  /**
-   * Creates an empty {@code CompactLinkedHashMap} instance.
-   */
+  /** Creates an empty {@code CompactLinkedHashMap} instance. */
   public static <K, V> CompactLinkedHashMap<K, V> create() {
     return new CompactLinkedHashMap<>();
   }
 
   /**
-   * Creates a {@code CompactLinkedHashMap} instance, with a high enough "initial capacity"
-   * that it <i>should</i> hold {@code expectedSize} elements without growth.
+   * Creates a {@code CompactLinkedHashMap} instance, with a high enough "initial capacity" that it
+   * <i>should</i> hold {@code expectedSize} elements without growth.
    *
    * @param expectedSize the number of elements you expect to add to the returned set
    * @return a new, empty {@code CompactLinkedHashMap} with enough capacity to hold {@code
-   *         expectedSize} elements without resizing
+   *     expectedSize} elements without resizing
    * @throws IllegalArgumentException if {@code expectedSize} is negative
    */
   public static <K, V> CompactLinkedHashMap<K, V> createWithExpectedSize(int expectedSize) {
@@ -86,14 +84,10 @@ class CompactLinkedHashMap<K, V> extends CompactHashMap<K, V> {
    */
   @VisibleForTesting transient long @MonotonicNonNull [] links;
 
-  /**
-   * Pointer to the first node in the linked list, or {@code ENDPOINT} if there are no entries.
-   */
+  /** Pointer to the first node in the linked list, or {@code ENDPOINT} if there are no entries. */
   private transient int firstEntry;
 
-  /**
-   * Pointer to the last node in the linked list, or {@code ENDPOINT} if there are no entries.
-   */
+  /** Pointer to the last node in the linked list, or {@code ENDPOINT} if there are no entries. */
   private transient int lastEntry;
 
   private final boolean accessOrder;
@@ -116,6 +110,12 @@ class CompactLinkedHashMap<K, V> extends CompactHashMap<K, V> {
     super.init(expectedSize, loadFactor);
     firstEntry = ENDPOINT;
     lastEntry = ENDPOINT;
+  }
+
+  @Override
+  void allocArrays() {
+    super.allocArrays();
+    int expectedSize = keys.length; // allocated size may be different than initial capacity
     links = new long[expectedSize];
     Arrays.fill(links, UNSET);
   }
@@ -179,13 +179,18 @@ class CompactLinkedHashMap<K, V> extends CompactHashMap<K, V> {
       setSucceeds(getPredecessor(srcIndex), dstIndex);
       setSucceeds(dstIndex, getSuccessor(srcIndex));
     }
+    links[srcIndex] = UNSET;
     super.moveLastEntry(dstIndex);
   }
 
   @Override
   void resizeEntries(int newCapacity) {
     super.resizeEntries(newCapacity);
+    int oldCapacity = links.length;
     links = Arrays.copyOf(links, newCapacity);
+    if (oldCapacity < newCapacity) {
+      Arrays.fill(links, oldCapacity, newCapacity, UNSET);
+    }
   }
 
   @Override
@@ -280,8 +285,12 @@ class CompactLinkedHashMap<K, V> extends CompactHashMap<K, V> {
 
   @Override
   public void clear() {
-    super.clear();
+    if (needsAllocArrays()) {
+      return;
+    }
     this.firstEntry = ENDPOINT;
     this.lastEntry = ENDPOINT;
+    Arrays.fill(links, 0, size(), UNSET);
+    super.clear();
   }
 }

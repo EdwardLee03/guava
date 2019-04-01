@@ -20,7 +20,7 @@
     <test.include>%regex[.*.class]</test.include>
     <truth.version>0.42</truth.version>
     <animal.sniffer.version>1.17</animal.sniffer.version>
-    <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
   </properties>
   <issueManagement>
     <system>GitHub Issues</system>
@@ -62,6 +62,7 @@
   </ciManagement>
   <modules>
     <module>guava</module>
+    <module>guava-bom</module>
     <module>guava-gwt</module>
     <module>guava-testlib</module>
     <module>guava-tests</module>
@@ -162,6 +163,7 @@
               <additionalOption>-Xdoclint:-html</additionalOption>
             </additionalOptions>
             <linksource>true</linksource>
+            <source>8</source>
           </configuration>
           <executions>
             <execution>
